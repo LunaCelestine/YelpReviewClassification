@@ -9,8 +9,13 @@ import numpy
 import pandas
 
 start = time.clock()
-df1 = pandas.read_csv('yelp_academic_dataset_review.csv', nrows=100, delimiter=',')#,encoding ='latin1'
-reviews = df1.iloc[:, 5].values
+df = pandas.read_csv('yelp_academic_dataset_review.csv', header=0, delimiter=',', nrows=10, usecols=["text", "stars"])#,encoding ='latin1'
+print(df)
+df = df.dropna(how='any', axis=0)
+print(df)
+reviews = df.iloc[:, 0].values
+ratings = df.iloc[:, 1].values
+print(ratings)
 print(reviews)
 end = time.clock()
 print("done")

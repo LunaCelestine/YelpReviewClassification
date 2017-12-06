@@ -16,14 +16,17 @@ from sklearn.metrics import accuracy_score
 
 start = time.clock()
 
-df1 = pandas.read_csv('yelp_academic_dataset_review.csv', header=0, delimiter=',')#,encoding ='latin1'
+df = pandas.read_csv('yelp_academic_dataset_review.csv', header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
+df = df.dropna(how='any', axis=0)
 
 #Select column 3, "text", store in reviews
-reviews = df1.iloc[:, 3].values
+reviews = df.iloc[:, 0].values
+
 
 #Select column 5, "stars", store in ratings
-ratings = df1.iloc[:, 5].values
-df1 = None
+ratings = df.iloc[:, 1].values
+
+
 #If the star rating is greater than 3, make set the label as 1, otherwise set it to -1
 ratings = numpy.where(ratings > 3, 1, -1)
 
@@ -32,7 +35,6 @@ ratings = numpy.where(ratings > 3, 1, -1)
 X_train, X_test_validation, Y_train, Y_test_validation = train_test_split(reviews, ratings, test_size=.3, random_state=1)
 X_validation, X_test, Y_validation, Y_test = train_test_split(X_test_validation, Y_test_validation, test_size=.5, random_state=1)
 
-reviews, ratings = None
 
 
 #These stopwords are a combination of the google stopwords and the stopwords provided in the notes with duplicates removed
@@ -55,14 +57,17 @@ def bagOWords(reviews, labels, target):
     for index,review in enumerate(reviews):
         if (labels[index] == target):
             #reviewWords = review.split() 
-            str(review)
+            
             reviewWords = [w for w in review.split(" ") if w not in stopwords]
             for reviewWord in reviewWords:
                 wordList.append(reviewWord)
     return wordList
 
+
+
 posBag = bagOWords(X_train, Y_train, 1)
 negBag = bagOWords(X_train, Y_train, -1)
+
 
 negCounter = Counter(negBag)
 posCounter = Counter(posBag)
