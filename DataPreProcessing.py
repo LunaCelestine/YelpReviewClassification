@@ -2,27 +2,23 @@
 """
 Spyder Editor
 
-This is a temporary script file.
+Used this script to scrub the data. The output is a csv called 'processed-review-ratings.csv' with 
+two columns: the review, as a string with all words separated by spaces and all punctuation removed 
+except apostrophes (e.g. "I'm" or "they're") and the review's star rating from 1-5
 """
 import numpy
 import pandas
 import csv
 import re
-df = pandas.read_csv('yelp_academic_dataset_review2.csv', header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
+numpy.set_printoptions(threshold=numpy.inf)
+
+df = pandas.read_csv('yelp_academic_dataset_review.csv', header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
 #print(df)
 df = df.dropna(how='any', axis=0)
-print(df)
-reviews = df.iloc[:, 0].values
-ratings = df.iloc[:, 1].values
-print(ratings)
-print(reviews)
-for review in reviews:    
-     review = re.sub(r'[^a-zA-Z\']+', '', review)
 
-string = "I'm a review"
-with open('yelp3.csv', 'w', newline='') as csvfile:
-    csvWriter = csv.writer(csvfile, delimiter=' ', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    for review in reviews:
-        strippedReview = review = re.sub(r'[^a-zA-Z\']+', '', review)
-        csvWriter.writerow([strippedReview,#somehow the rating needs to get here ])
-        
+for i, row in df.iterrows():
+	processedString = row['text']
+	processedString = re.sub(r'[^a-zA-Z\']+', ' ', processedString)
+	df.set_value(i,'text',processedString)
+
+df.to_csv('processed-reviews-ratings.csv', index=False)
