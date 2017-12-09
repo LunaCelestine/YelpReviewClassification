@@ -67,7 +67,7 @@ def bagOWords(reviews, labels, target):
     for index,review in enumerate(reviews):
         if (labels[index] == target):
             #reviewWords = review.split() 
-            review = re.sub(r'[^a-zA-Z ]+', '', review)
+            review = re.sub(r'[^a-zA-Z\']+', '', review)
             reviewWords = [w for w in review.split(" ") if w not in stopwords]
             for reviewWord in reviewWords:
                 wordList.append(reviewWord)
