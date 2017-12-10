@@ -3,7 +3,7 @@
 Spyder Editor
 
 Used this script to scrub the data. The output is a csv called 'processed-review-ratings.csv' with 
-two columns: the review, as a string with all words separated by spaces and all punctuation removed 
+two columns: the review, as a string with all lowercase words separated by spaces and all punctuation removed 
 except apostrophes (e.g. "I'm" or "they're") and the review's star rating from 1-5
 """
 import numpy
@@ -19,6 +19,7 @@ df = df.dropna(how='any', axis=0)
 for i, row in df.iterrows():
 	processedString = row['text']
 	processedString = re.sub(r'[^a-zA-Z\']+', ' ', processedString)
+	processedString = processedString.lower()
 	df.set_value(i,'text',processedString)
 
 df.to_csv('processed-reviews-ratings.csv', index=False)

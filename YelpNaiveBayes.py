@@ -15,15 +15,17 @@ import re
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 import math
-
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import CountVectorizer
 
 start = time.clock()
 
-df = pandas.read_csv('yelp_academic_dataset_review.csv', header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
+df = pandas.read_csv('processed-reviews-ratings.csv', nrows=8000, header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
 df = df.dropna(how='any', axis=0)
 
 #Select column 3, "text", store in reviews
 reviews = df.iloc[:, 0].values
+
 
 
 #Select column 5, "stars", store in ratings
@@ -37,11 +39,11 @@ ratings = df.iloc[:, 1].values
 #X_validation, X_test, Y_validation, Y_test = train_test_split(X_test_validation, Y_test_validation, test_size=.5, random_state=1)
 
 #Train test split with random state 1, maintain proportion of labels in ratings, unused/sample are 80/20% of original data
-unused_X, X_sample, unused_Y, Y_sample = train_test_split(reviews, ratings, test_size=.1, stratify=ratings, random_state=1)
+# unused_X, X_sample, unused_Y, Y_sample = train_test_split(reviews, ratings, test_size=.1, stratify=ratings, random_state=1)
 
 
 #Train test split with random state 1, maintain proportion of labels in Y_sample, train/test_validation are 14/6% of original data
-X_train, X_test_validation, Y_train, Y_test_validation, = train_test_split(X_sample, Y_sample, test_size=.3, stratify=Y_sample, random_state=1)
+X_train, X_test_validation, Y_train, Y_test_validation, = train_test_split(reviews, ratings, test_size=.3, stratify=ratings, random_state=1)
 
 #Train test split with random state 1, maintain proportion of labels in Y_test_validation, validation/test are 3/3% of original data
 X_validation, X_test, Y_validation, Y_test = train_test_split(X_test_validation, Y_test_validation, test_size= .5, stratify=Y_test_validation, random_state=1)
@@ -66,9 +68,8 @@ def bagOWords(reviews, labels, target):
     wordList = []
     for index,review in enumerate(reviews):
         if (labels[index] == target):
-            #reviewWords = review.split() 
-            review = re.sub(r'[^a-zA-Z\']+', '', review)
-            reviewWords = [w for w in review.split(" ") if w not in stopwords]
+            reviewWords = review.split() 
+            # reviewWords = [w for w in review.split(" ") if w not in stopwords]
             for reviewWord in reviewWords:
                 wordList.append(reviewWord)
     return wordList
@@ -84,22 +85,20 @@ threeStarBag = bagOWords(X_train, Y_train, 3)
 fourStarBag = bagOWords(X_train, Y_train, 4)
 fiveStarBag = bagOWords(X_train, Y_train, 5)
 
-
 #negCounter = Counter(negBag)
 #posCounter = Counter(posBag)
+oneStarCounter = Counter(x for x in oneStarBag if x not in stopwords)
+twoStarCounter = Counter(x for x in twoStarBag if x not in stopwords)
+threeStarCounter = Counter(x for x in threeStarBag if x not in stopwords)
+fourStarCounter = Counter(x for x in fourStarBag if x not in stopwords)
+fiveStarCounter = Counter(x for x in fiveStarBag if x not in stopwords)
 
-oneStarCounter = Counter(oneStarBag)
-twoStarCounter = Counter(twoStarBag)
-threeStarCounter = Counter(threeStarBag)
-fourStarCounter = Counter(fourStarBag)
-fiveStarCounter = Counter(fiveStarBag)
-#print(posCounter)
 #print(negCounter == posCounter)
-#oneStarCounter = {k:oneStarCounter[k] for k in oneStarCounter if oneStarCounter[k] > 1}
-#twoStarCounter = {k:twoStarCounter[k] for k in twoStarCounter if twoStarCounter[k] > 1}
-#threeStarCounter = {k:threeStarCounter[k] for k in threeStarCounter if threeStarCounter[k] > 1}
-#fourStarCounter = {k:fourStarCounter[k] for k in fourStarCounter if fourStarCounter[k] > 1}
-#fiveStarCounter = {k:fiveStarCounter[k] for k in fiveStarCounter if fiveStarCounter[k] > 1}
+oneStarCounter = {k:oneStarCounter[k] for k in oneStarCounter if oneStarCounter[k] > 1}
+twoStarCounter = {k:twoStarCounter[k] for k in twoStarCounter if twoStarCounter[k] > 1}
+threeStarCounter = {k:threeStarCounter[k] for k in threeStarCounter if threeStarCounter[k] > 1}
+fourStarCounter = {k:fourStarCounter[k] for k in fourStarCounter if fourStarCounter[k] > 5}
+fiveStarCounter = {k:fiveStarCounter[k] for k in fiveStarCounter if fiveStarCounter[k] > 5}
 
 labelCount = Counter(Y_train)
 #negCount = labelCount.get(-1)
@@ -112,10 +111,7 @@ threeStarCount = labelCount.get(3)
 fourStarCount = labelCount.get(4)
 fiveStarCount = labelCount.get(5)
 
-
-
 total = (oneStarCount + twoStarCount + threeStarCount + fourStarCount + fiveStarCount) 
-
 
 #negClassProb = negCount / (negCount + posCount)
 #posClassProb = posCount / (negCount + posCount)
@@ -127,24 +123,26 @@ twoStarClassProb = twoStarCount / total
 threeStarClassProb = threeStarCount / total
 fourStarClassProb = fourStarCount / total
 fiveStarClassProb = fiveStarCount / total
-sys.exit(0)
+# sys.exit(0)
 def NaiveBayes(review, count, prob):
     pred = 1
     logProb = math.log(prob)
     reviewWords = Counter(re.split("\s+", review))
     #print("pred", pred)
     for reviewWord in reviewWords:
-#        print("reviewWords.get(reviewWord):",reviewWords.get(reviewWord))
-#        print("(count.get(reviewWord, 0) + 1):",(count.get(reviewWord, 0) + 1))
-#        print("sum(count.values()):", sum(count.values()))
-#        print(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values())))
-#        print(pred *(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values()))))
-        pred += math.log(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values())))
-        #pred *= reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values()))
+        # print("word appears in this review :",reviewWords.get(reviewWord))
+        # print("word appears in all reviews + 1:",(count.get(reviewWord, 0) + 1))
+        # print("total number of words in class:", sum(count.values()))
+        # print(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values())))
+        # print(pred *(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values()))))
+        # pred += math.log(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values())))
+        pred *= math.log(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values())))
         if(pred == 0.0):
+            print(reviewWord)
+            print('problem')
             sys.exit(0)
     
-    pred += logProb
+    pred += prob
     #print(prob)
     #print("pred", pred)
     return pred  
@@ -165,7 +163,7 @@ def predict(review):
     classPredictions[3] = threeStarPrediction
     classPredictions[4] = fourStarPrediction
     classPredictions[5] = fiveStarPrediction
-    #print("class predications:", classPredictions)
+    # print("class predications:", classPredictions)
     
     #return the key whose value is the max of all the values, where 1=<key=<5, the most likely star rating
     predictedStarRating = max(classPredictions, key=classPredictions.get)
@@ -191,6 +189,9 @@ def main():
     end = time.clock()
     duration = end - start
     print("Total Reviews:", count)
+    unique, counts = numpy.unique(predictions, return_counts=True)
+    print(unique)
+    print(counts) 
 #    print("final predictions:")
 #    print(predictions)
 #    print("Y_validation:")
@@ -202,8 +203,12 @@ def main():
     print('F1 Score: ' +  str(f1_score(Y_validation, predictions, average=None)))
     print("---Duration: %s seconds ---" % duration)
     gc.collect()
-    
-          
+
+
+# unique, counts = numpy.unique(Y_validation, return_counts=True)
+# print(unique)
+# print(counts) 
+         
 main()
 
 
