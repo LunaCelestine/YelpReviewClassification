@@ -10,6 +10,7 @@ The scripts in this repository represent the Python code that we used to generat
 The four scripts are used as follows:
 - `DataPreProcessing.py` was used to convert the review text (`yelp_academic_dataset_review.csv`) into a usable format (all lowercase, no puncation except apostrophes, separated by spaces). It outputs a new csv called `processed-reviews-ratings.csv`.  
 - `YelpNaiveBayes.py` is our own implementation of the Naive Bayes algorithm. Warning: running this with any sizable amount of data will take a long time.
+- `YelpBinaryNaiveBayes.py` is our own implementation of the Naive Bayes algorithm, but instead of predicting class label, it predicts positive (greater than three stars) or negative (three stars or less)  
 - `scikitlearnYelpNaiveBayes.py` is our model using SciKitLearn's impelementation of Multinomial Naive Bayes (http://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)
 - `sklSVM.py` is our model using SciKitLearn's impelementation of SVM using SGD (http://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html). This is the model that ended up having the best performance, and was the one we used for our test dataset.
 

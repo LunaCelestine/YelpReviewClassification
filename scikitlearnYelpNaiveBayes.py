@@ -44,6 +44,5 @@ misclass = numpy.where(Y_validation != predicted, 1, 0)
 print('Misclassified samples: %d' % misclass.sum())
 print('Accuracy: %.2f' % accuracy_score(Y_validation, predicted))
 print('F1 Score: ' +  str(f1_score(Y_validation, predicted, average=None)))
-# print(numpy.mean(predicted == Y_validation))
 
 

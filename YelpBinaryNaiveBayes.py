@@ -17,9 +17,12 @@ from sklearn.metrics import accuracy_score
 from sklearn import metrics
 import math
 
+numpy.set_printoptions(threshold=numpy.inf)
+
+
 start = time.clock()
 #IMPORTANT: Change nrows paramater to determine how many data samples you want in your whole set (or remove it for entire dataset)
-df = pandas.read_csv('processed-reviews-ratings.csv', nrows=8000, header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
+df = pandas.read_csv('processed-reviews-ratings.csv', nrows=15000, header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
 df = df.dropna(how='any', axis=0)
 
 #Select column 3, "text", store in reviews
@@ -28,10 +31,13 @@ reviews = df.iloc[:, 0].values
 #Select column 5, "stars", store in ratings
 ratings = df.iloc[:, 1].values
 
-#Train test split with random state 1, maintain proportion of labels in Y_sample, train/test_validation are 14/6% of original data
+#If the star rating is greater than 3, set the label to 1, otherwise set it to -1
+ratings = numpy.where(ratings > 3, 1, -1)
+
+#Train test split with random state 1, maintain proportion of labels in Y_sample, train/test_validation are 70/30% of original data
 X_train, X_test_validation, Y_train, Y_test_validation, = train_test_split(reviews, ratings, test_size=.3, stratify=ratings, random_state=1)
 
-#Train test split with random state 1, maintain proportion of labels in Y_test_validation, validation/test are 3/3% of original data
+#Train test split with random state 1, maintain proportion of labels in Y_test_validation, validation/test are 15/15% of original data
 X_validation, X_test, Y_validation, Y_test = train_test_split(X_test_validation, Y_test_validation, test_size= .5, stratify=Y_test_validation, random_state=1)
 
 stopwords = {'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'aren\'t', 'as', 'at', 'be',
@@ -57,39 +63,23 @@ def bagOWords(reviews, labels, target):
                 wordList.append(reviewWord)
     return wordList
 
-oneStarBag = bagOWords(X_train, Y_train, 1)
-twoStarBag = bagOWords(X_train, Y_train, 2)
-threeStarBag = bagOWords(X_train, Y_train, 3)
-fourStarBag = bagOWords(X_train, Y_train, 4)
-fiveStarBag = bagOWords(X_train, Y_train, 5)
+posBag = bagOWords(X_train, Y_train, 1)
+negBag = bagOWords(X_train, Y_train, -1)
 
-oneStarCounter = Counter(x for x in oneStarBag if x not in stopwords)
-twoStarCounter = Counter(x for x in twoStarBag if x not in stopwords)
-threeStarCounter = Counter(x for x in threeStarBag if x not in stopwords)
-fourStarCounter = Counter(x for x in fourStarBag if x not in stopwords)
-fiveStarCounter = Counter(x for x in fiveStarBag if x not in stopwords)
 
-oneStarCounter = {k:oneStarCounter[k] for k in oneStarCounter if oneStarCounter[k] > 1}
-twoStarCounter = {k:twoStarCounter[k] for k in twoStarCounter if twoStarCounter[k] > 1}
-threeStarCounter = {k:threeStarCounter[k] for k in threeStarCounter if threeStarCounter[k] > 1}
-fourStarCounter = {k:fourStarCounter[k] for k in fourStarCounter if fourStarCounter[k] > 5}
-fiveStarCounter = {k:fiveStarCounter[k] for k in fiveStarCounter if fiveStarCounter[k] > 5}
+negCounter = Counter(x for x in negBag if x not in stopwords)
+posCounter = Counter(x for x in posBag if x not in stopwords)
+
+# for words appearing more than once
+# negCounter = {k:negCounter[k] for k in negCounter if negCounter[k] > 1}
+# posCounter = {k:posCounter[k] for k in posCounter if posCounter[k] > 1}
 
 labelCount = Counter(Y_train)
+negCount = labelCount.get(-1)
+posCount = labelCount.get(1)
 
-oneStarCount = labelCount.get(1)
-twoStarCount = labelCount.get(2)
-threeStarCount = labelCount.get(3)
-fourStarCount = labelCount.get(4)
-fiveStarCount = labelCount.get(5)
-
-total = (oneStarCount + twoStarCount + threeStarCount + fourStarCount + fiveStarCount) 
-
-oneStarClassProb = oneStarCount / total
-twoStarClassProb = twoStarCount / total
-threeStarClassProb = threeStarCount / total
-fourStarClassProb = fourStarCount / total
-fiveStarClassProb = fiveStarCount / total
+negClassProb = negCount / (negCount + posCount)
+posClassProb = posCount / (negCount + posCount)
 
 def NaiveBayes(review, count, prob):
     pred = 1
@@ -99,37 +89,20 @@ def NaiveBayes(review, count, prob):
     for reviewWord in reviewWords:
         # print(pred *(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values()))))
         pred += math.log(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values())))
-        # pred *= math.log(reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values())))
+        # pred *= reviewWords.get(reviewWord) * ((count.get(reviewWord, 0) + 1) / sum(count.values()))
         if(pred == 0.0):
             sys.exit(0)
     
-    pred += prob
+    pred += logProb
     return pred  
 
-def predict(review):  
-    oneStarPrediction = NaiveBayes(review, oneStarCounter, oneStarClassProb)
-    twoStarPrediction = NaiveBayes(review, twoStarCounter, twoStarClassProb)
-    threeStarPrediction = NaiveBayes(review, threeStarCounter, threeStarClassProb)
-    fourStarPrediction = NaiveBayes(review, fourStarCounter, fourStarClassProb)
-    fiveStarPrediction = NaiveBayes(review, fiveStarCounter, fiveStarClassProb)
+def predict(review):
+    negativePrediction = NaiveBayes(review, negCounter, negClassProb)
+    positivePrediction = NaiveBayes(review, posCounter, posClassProb)
     
-    classPredictions = {}
-    classPredictions[1] = oneStarPrediction
-    classPredictions[2] = twoStarPrediction
-    classPredictions[3] = threeStarPrediction
-    classPredictions[4] = fourStarPrediction
-    classPredictions[5] = fiveStarPrediction
-    
-    #return the key whose value is the max of all the values, where 1=<key=<5, the most likely star rating
-    predictedStarRating = max(classPredictions, key=classPredictions.get)
-
-    
-    #there should never be a probability of 0.0
-    if(classPredictions[predictedStarRating] == 0.0):
-        print("Error: classPredictions[predictedStarRating] == 0.0")
-        sys.exit(0)
-    return predictedStarRating
-
+    if negativePrediction > positivePrediction:
+        return -1
+    return 1
 
 def main():
     predictions = []
@@ -143,7 +116,7 @@ def main():
     print("Total Reviews:", count)
 
     misclass = numpy.where(Y_validation != predictions, 1, 0)
-    print(metrics.classification_report(Y_validation, predictions, target_names=["1", "2", "3", "4", "5"]))
+    print(metrics.classification_report(Y_validation, predictions, target_names=["1", "-1"]))
 
     print('Misclassified samples: %d' % misclass.sum())
     print('Accuracy: %.2f' % accuracy_score(Y_validation, predictions))
