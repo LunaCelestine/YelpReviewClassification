@@ -123,7 +123,12 @@ twoStarClassProb = twoStarCount / total
 threeStarClassProb = threeStarCount / total
 fourStarClassProb = fourStarCount / total
 fiveStarClassProb = fiveStarCount / total
-# sys.exit(0)
+print(oneStarClassProb)
+print(twoStarClassProb)
+print(threeStarClassProb)
+print(fourStarClassProb)
+print(fiveStarClassProb)
+sys.exit(0)
 def NaiveBayes(review, count, prob):
     pred = 1
     logProb = math.log(prob)

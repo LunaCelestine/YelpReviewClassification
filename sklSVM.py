@@ -1,22 +1,16 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Dec  8 09:58:44 2017
-
-@author: ZeroTheHero
-"""
 import numpy
 import pandas
 from sklearn.cross_validation import train_test_split 
 from sklearn import metrics
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import GridSearchCV
 
-df = pandas.read_csv('processed-reviews-ratings.csv', nrows=3000000, header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
+df = pandas.read_csv('processed-reviews-ratings.csv', nrows=500000, header=0, delimiter=',', usecols=["text", "stars"])#,encoding ='latin1'
 
 #Select column 3, "text", store in reviews
 reviews = df.iloc[:, 0].values
@@ -30,10 +24,30 @@ X_train, X_test_validation, Y_train, Y_test_validation, = train_test_split(revie
 #Train test split with random state 1, maintain proportion of labels in Y_test_validation, validation/test are 15/15% of original data
 X_validation, X_test, Y_validation, Y_test = train_test_split(X_test_validation, Y_test_validation, test_size= .5, stratify=Y_test_validation, random_state=1)
 
-text_clf = Pipeline([('vect', CountVectorizer()),
-	('tfidf', TfidfTransformer()),
-	('clf', MultinomialNB())])
+
+text_clf = Pipeline([('vect', CountVectorizer(ngram_range=(1,3))),
+	('tfidf', TfidfTransformer(use_idf=True)),
+	('clf', SGDClassifier(loss='hinge', penalty='l2',
+		alpha=1e-3, random_state=42,
+		max_iter=5, tol=None))])
 text_clf = text_clf.fit(X_train, Y_train)
+#trying out grid search!
+#testing words, bigrams or 3grams, with or without idf, and with a penalty parameter of either 0.01 or 0.001 for the linear SVM
+
+# parameters = {'vect__ngram_range': [(1, 1), (1, 2), (1,3)], 'tfidf__use_idf': (True, False),'clf__alpha': (1e-2, 1e-3)}
+
+# gs_clf = GridSearchCV(text_clf, parameters, n_jobs=-1)
+
+# gs_clf = gs_clf.fit(X_train, Y_train)
+
+# print(gs_clf.best_score_)
+# for param_name in sorted(parameters.keys()):
+# 	print("%s: %r" % (param_name, gs_clf.best_params_[param_name]))
+
+##result of the above grid search: 
+# clf__alpha: 0.001 
+# tfidf__use_idf: True
+# vect__ngram_range: (1, 3)
 
 predicted = text_clf.predict(X_validation)
 print(numpy.mean(predicted == Y_validation))
@@ -44,6 +58,6 @@ misclass = numpy.where(Y_validation != predicted, 1, 0)
 print('Misclassified samples: %d' % misclass.sum())
 print('Accuracy: %.2f' % accuracy_score(Y_validation, predicted))
 print('F1 Score: ' +  str(f1_score(Y_validation, predicted, average=None)))
-# print(numpy.mean(predicted == Y_validation))
+
 
 
