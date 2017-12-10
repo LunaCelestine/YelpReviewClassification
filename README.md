@@ -1,10 +1,13 @@
 ## Comp 488 Machine Learning Final Project
-#### Yelp Dataset Review Classification Task
+#### Project Name: Yelp Dataset Review Classification Task
 ##### Team Members
 - Bradley Dabdoub  
 - Julia Cicale  
+##### Project Repository
+Available at https://github.com/bdabdoub/YelpReviewClassification
 ##### Project Report
-Available at https://docs.google.com/document/d/1OTJbAaFZPt9gZ_ep6IyigVDv_GmxfLXOwXvKGA0Ca3U/edit?usp=sharing
+Available at https://docs.google.com/document/d/1OTJbAaFZPt9gZ_ep6IyigVDv_GmxfLXOwXvKGA0Ca3U/edit?usp=sharing  
+Note that this report will be completed by 12/16, the day of the presentation.  
 ##### Project Information
 The scripts in this repository represent the Python code that we used to generate various ML models for classifying a Yelp review (1, 2, 3, 4, or 5 stars) based on the review's text content.  
 The four scripts are used as follows:
